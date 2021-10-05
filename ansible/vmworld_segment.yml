@@ -1,0 +1,16 @@
+# Copyright 2018 VMware, Inc.
+# SPDX-License-Identifier: BSD-2-Clause OR GPL-3.0-only
+---
+- hosts: localhost
+  become: yes
+  tasks:
+    - name: Modify Segment
+      nsxt_policy_segment:
+        hostname: "YourNSXHere"
+        username: "YourUserHere"
+        password: "YourPasswordHere"
+        state: "present"
+        validate_certs: "false"
+        display_name: "vmworld_segment"
+        domain_name: "infra"
+        transport_zone_display_name: "nsx-overlay-transportzone"
