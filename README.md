@@ -12,7 +12,7 @@ Presenters
 Tools used during the session
   - API Toolkit (cURL, Postman and Jenkins)
   - Ansible
-  - Terriform
+  - Terraform
   - vRA
   - SaltStack
 
