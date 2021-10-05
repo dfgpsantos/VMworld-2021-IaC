@@ -1,0 +1,37 @@
+# Copyright 2018 VMware, Inc.
+# SPDX-License-Identifier: BSD-2-Clause OR GPL-3.0-only
+#
+# Variables file to deploy a simple topology
+
+{
+    "nsx_manager": "YourNSXHere",
+    "nsx_username": "YourUserHere",
+    "nsx_password": "YourPasswordHere",
+    "validate_certs": "false",
+    "state": "present",
+    "segments": [
+        {
+            "display_name": "VMworld-Web",
+            "tier1_display_name": "Tier-1-VMworld",
+            "tz": "nsx-overlay-transportzone",
+            "domain_name": "infra",
+            "subnets": [
+                {
+                  "gateway_address": "172.19.10.1/24"
+                }
+            ],
+        },
+        {
+            "display_name": "VMworld-App",
+            "tier1_display_name": "Tier-1-VMworld",
+            "tz": "nsx-overlay-transportzone",
+            "domain_name": "infra",
+            "subnets": [
+                {
+                  "gateway_address": "172.19.20.1/24"
+                }
+            ],
+        }
+    ]
+
+}
