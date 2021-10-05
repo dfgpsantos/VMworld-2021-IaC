@@ -1,0 +1,351 @@
+# Copyright 2018 VMware, Inc.
+# SPDX-License-Identifier: BSD-2-Clause OR GPL-3.0-only
+#
+# Variables file to deploy a simple topology
+
+{
+    "nsx_manager": "10.182.3.46",
+    "nsx_username": "admin",
+    "nsx_password": "Admin!23Admin",
+    "validate_certs": "false",
+
+    "state": "present",
+    #"state": "present",
+
+        "tier0_gateways": [
+          {
+            "display_name": "Tier-0",
+            "ha_mode": "ACTIVE_STANDBY",
+            "tags": [
+                          {
+                              "tag": "ansible",
+                        "scope": "demo"
+                      }
+                  ],
+                "locale_services": [
+                          {
+                              "state": "present",
+                        "id": "test-t0ls",
+                        "route_redistribution_config": {
+                                  "redistribution_rules": [
+                                      "route_redistribution_types": ["TIER0_STATIC", "TIER0_NAT"]
+                              ]
+                          },
+                        "edge_cluster_info": {
+                                  "edge_cluster_display_name": "Edge-Cluster-01",
+                          },
+                        "preferred_edge_nodes_info": [
+                                  {
+                                      "edge_cluster_display_name": "Edge-Cluster-01",
+                                "edge_node_display_name": "EdgeNode-01"
+                              }
+                          ],
+                        "BGP": {
+                                  "state": "present",
+                            "local_as_num": '1211'
+                          }
+                      }
+                  ]
+              }
+          ],
+
+    "tier1_gateways": [
+      {
+        "display_name": "Tier-1-VMworld-Ansible",
+        "tier0_display_name": "T0",
+        "route_advertisement_types": [ "TIER1_CONNECTED" ],
+        "tags": [
+          {
+            "tag": "ansible",
+            "scope": "demo"
+          }
+        ]
+      }
+    ],
+
+    "segments": [
+        {
+            "display_name": "Web-Segment-VMworld-Ansible",
+            "tier1_display_name": "Tier-1-VMworld-Ansible",
+            "tz": "nsx-overlay-transportzone",
+            "domain_name": "vmworld.local",
+            "subnets": [
+                {
+                  "gateway_address": "172.19.10.1/24"
+                }
+            ],
+            "tags": [
+                {
+                  "tag": "ansible",
+                  "scope": "demo"
+                },
+                {
+                  "tag": "web",
+                  "scope": "east"
+                }
+            ]
+        },
+        {
+            "display_name": "App-Segment-VMworld-Ansible",
+            "tier1_display_name": "Tier-1-VMworld-Ansible",
+            "tz": "nsx-overlay-transportzone",
+            "domain_name": "vmworld.local",
+            "subnets": [
+                {
+                  "gateway_address": "172.19.20.1/24"
+                }
+            ],
+            "tags": [
+                {
+                  "tag": "ansible",
+                  "scope": "demo"
+                },
+                {
+                  "tag": "app",
+                  "scope": "east"
+                }
+            ]
+        },
+        {
+            "display_name": "DB-Segment-VMworld-Ansible",
+            "tier1_display_name": "Tier-1-VMworld-Ansible",
+            "tz": "nsx-overlay-transportzone",
+            "domain_name": "vmworld.local",
+            "subnets": [
+                {
+                  "gateway_address": "172.19.30.1/24"
+                }
+            ],
+            "tags": [
+                {
+                  "tag": "ansible",
+                  "scope": "demo"
+                },
+                {
+                  "tag": "db",
+                  "scope": "east"
+                }
+            ]
+        }
+    ],
+
+# Note: 'group' is a reserved key. Cant use it here.
+    "mygroups": [
+        {
+            "display_name": "web-VMs-VMworld-Ansible",
+            "domain_id": "default",
+            "expression": [
+                {
+                    "member_type": "VirtualMachine",
+                    "value": "tier|web",
+                    "key": "Tag",
+                    "operator": "EQUALS",
+                    "resource_type": "Condition"
+                }
+            ],
+            "tags": [
+                {
+                  "tag": "ansible",
+                  "scope": "demo"
+                },
+                {
+                  "tag": "web",
+                  "scope": "east"
+                }
+            ]
+        },
+        {
+            "display_name": "app-VMs-VMworld-Ansible",
+            "domain_id": "default",
+            "expression": [
+                {
+                    "member_type": "VirtualMachine",
+                    "value": "app",
+                    "key": "Tag",
+                    "operator": "EQUALS",
+                    "resource_type": "Condition"
+                }
+            ],
+            "tags": [
+                {
+                  "tag": "ansible",
+                  "scope": "demo"
+                },
+                {
+                  "tag": "app",
+                  "scope": "east"
+                }
+            ]
+        },
+        {
+            "display_name": "db-VMs-VMworld-Ansible",
+            "domain_id": "default",
+            "expression": [
+                {
+                    "member_type": "VirtualMachine",
+                    "value": "web",
+                    "key": "Tag",
+                    "operator": "EQUALS",
+                    "resource_type": "Condition"
+                }
+            ],
+            "tags": [
+                {
+                  "tag": "ansible",
+                  "scope": "demo"
+                },
+                {
+                  "tag": "db",
+                  "scope": "east"
+                }
+            ]
+        }
+    ],
+
+    "security_policies" : [
+            {
+            "display_name": "web-VMworld-Ansible",
+            "domain_id": "default",
+            "category": "Application",
+            "rules": [
+                {
+                    "display_name": "web-to-web-block",
+                    "description": "Block web to web",
+                    "sequence_number": 1,
+                    "source_groups": [
+                            "/infra/domains/default/groups/web-VMs-VMworld-Ansible"
+                        ],
+                    "destination_groups": [
+                            "/infra/domains/default/groups/web-VMs-VMworld-Ansible"
+                        ],
+                    "services": [
+                            "/infra/services/SSH","/infra/services/RDP"
+                        ],
+                    "action": "DROP"
+                },
+                {
+                    "display_name": "any-to-web-allow",
+                    "description": "Allow any to web",
+                    "sequence_number": 2,
+                    "source_groups": [
+                            "any"
+                        ],
+                    "destination_groups": [
+                            "/infra/domains/default/groups/web-VMs-VMworld-Ansible"
+                        ],
+                    "services": [
+                            "/infra/services/HTTP","/infra/services/HTTPS"
+                        ],
+                    "action": "ALLOW"
+                },
+                {
+                    "display_name": "Catch-All",
+                    "description": "Catch All rule",
+                    "sequence_number": 3,
+                    "source_groups": [
+                            "any"
+                        ],
+                    "destination_groups": [
+                            "/infra/domains/default/groups/web-VMs-VMworld-Ansible"
+                        ],
+                    "services": [
+                            "any"
+                        ],
+                    "action": "DROP"
+                },
+            ],
+            "tags": [
+                {
+                    "tag": "ansible",
+                    "scope": "demo"
+                }
+            ]
+        },
+            {
+            "display_name": "web-to-app-VMworld-Ansible",
+            "domain_id": "default",
+            "category": "Application",
+            "rules": [
+                {
+                    "display_name": "app-port",
+                    "description": "Rule for Application port",
+                    "sequence_number": 1,
+                    "source_groups": [
+                            "/infra/domains/default/groups/web-VMs-VMworld-Ansible"
+                        ],
+                    "destination_groups": [
+                            "/infra/domains/default/groups/app-VMs-VMworld-Ansible"
+                        ],
+                    "services": [
+                            "/infra/services/HTTP"
+                        ],
+                    "action": "ALLOW"
+                },
+                {
+                    "display_name": "Catch-All",
+                    "description": "Catch All rule",
+                    "sequence_number": 2,
+                    "source_groups": [
+                            "any"
+                        ],
+                    "destination_groups": [
+                            "/infra/domains/default/groups/app-VMs-VMworld-Ansible"
+                        ],
+                    "services": [
+                            "any"
+                        ],
+                    "action": "DROP"
+                },
+            ],
+            "tags": [
+                {
+                    "tag": "ansible",
+                    "scope": "demo"
+                }
+            ]
+        },
+        {
+            "display_name": "db-VMworld-Ansible",
+            "domain_id": "default",
+            "category": "Infrastructure",
+            "rules": [
+                {
+                    "display_name": "MySQL",
+                    "description": "Rule for Application port",
+                    "sequence_number": 1,
+                    "source_groups": [
+                            "/infra/domains/default/groups/app-VMs-VMworld-Ansible",
+                        ],
+                    "destination_groups": [
+                            "/infra/domains/default/groups/db-VMs-VMworld-Ansible"
+                        ],
+                    "services": [
+                            "/infra/services/MySQL"
+                        ],
+                    "action": "ALLOW"
+                },
+                {
+                    "display_name": "Catch-All-VMworld-Ansible",
+                    "description": "Catch All rule",
+                    "sequence_number": 2,
+                    "source_groups": [
+                            "any"
+                        ],
+                    "destination_groups": [
+                            "/infra/domains/default/groups/db-VMs-VMworld-Ansible"
+                        ],
+                    "services": [
+                            "any"
+                        ],
+                    "action": "DROP"
+                },
+            ],
+            "tags": [
+                {
+                    "tag": "ansible",
+                    "scope": "demo"
+                }
+            ]
+        }
+    ]
+}
